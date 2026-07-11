@@ -1,0 +1,160 @@
+random_state: 42
+data:
+  raw_path: data/raw/card_transactions.csv
+  processed_path: data/processed/transactions_clean.parquet
+  features_path: data/features/features.parquet
+  train_features_path: data/features/train_features.parquet
+  checkpoint_path: data/features/checkpoint.parquet
+duckdb:
+  threads: 10
+  memory_limit: 8GB
+splits:
+  v1_train_start: 1991
+  v1_train_end: 2010
+  v1_val_start: 2011
+  v1_val_end: 2012
+  v1_test_start: 2013
+  v1_test_end: 2014
+  drift_detection_year: 2015
+  v2_train_start: 1991
+  v2_train_end: 2017
+  v2_val_year: 2018
+  v2_test_start: 2019
+  v2_test_end: 2020
+experiments:
+  v1:
+    name: Pre-Chip Model
+    description: Trained before chip cards existed
+  v2:
+    name: After-Chip Model
+    description: Retrained after chip drift detected
+postgres:
+  host: localhost
+  port: 5432
+  database: fraud_db
+  pool_size: 5
+  max_overflow: 10
+features:
+  lookback_months: 12
+  notebook_velocity_windows_min:
+  - 5
+  - 60
+  - 1440
+  velocity_windows_min:
+  - 60
+  - 1440
+  baseline_window_days:
+  - 30
+  - 365
+  cross_cards_min: 1440
+  velocity_min_periods: 1
+  spend_min_periods: 3
+  high_value_threshold: 400
+encoding:
+  mcc_frequency_from_training_only: true
+feature_cols:
+- amount
+- is_refund
+- is_high_value
+- is_online
+- error_bad_cvv
+- error_bad_expiration
+- error_bad_card
+- error_bad_pin
+- day_of_week
+- is_weekend
+- is_night
+- hour_sin
+- hour_cos
+- minutes_since_last_txn
+- mcc_frequency
+- card_txn_count_60min
+- card_txn_count_1440min
+- card_txn_count_30d
+- card_txn_count_365d
+- card_spend_mean_30d
+- card_spend_std_30d
+- user_txn_count_60min
+- user_txn_count_1440min
+- user_txn_count_30d
+- user_txn_count_365d
+- user_spend_mean_30d
+- user_spend_std_30d
+- card_amount_zscore_30d
+- user_amount_zscore_30d
+- card_amount_zscore_365d
+- user_is_new_city
+- user_amount_zscore_365d
+- card_is_new_state
+- user_is_new_state
+- card_is_new_city
+- card_is_new_merchant
+- user_is_new_merchant
+- distinct_cards_used_1440min
+model:
+  lgbm:
+    algorithm: LightGBM
+    baseline:
+      learning_rate: 0.05
+      max_depth: 6
+      n_estimators: 500
+      objective: binary
+      metric: aucpr
+      scale_pos_weight: 649.4353
+    tuned:
+      learning_rate: 0.017706515519014778
+      max_depth: 9
+      n_estimators: 950
+      num_leaves: 80
+      feature_fraction: 0.836965827544817
+      min_child_samples: 33
+      reg_alpha: 0
+      reg_lambda: 1.0e-06
+  isolation_forest:
+    contamination: 0.01
+    n_estimators: 100
+  hybrid:
+    lgbm_weight: 1.0
+    iso_weight: 0.0
+  threshold: 0.95
+  fp_cost: 2.0
+  recall_floor: 0.75
+risk:
+  thresholds:
+    low: 0.118
+    medium: 0.437
+    high: 0.934
+    critical: 0.95
+  severity_weights:
+    minimal: 0.1
+    low: 0.3
+    medium: 0.6
+    high: 1.0
+    critical: 1.5
+inference:
+  default_mode: batch
+  accelerated_multiplier: 100
+  chunk_size: 50000
+  demo:
+    sample_size: 1000
+    delay_seconds: 0.1
+    batch_log_in: 100
+artifacts:
+  model_dir: models/artifacts
+  shap_global_plot_path: dashboard/shap_global_importance.png
+  lgbm_v1_path: models/artifacts/lgbm_v1.pkl
+  iso_v1_path: models/artifacts/iso_v1.pkl
+shap:
+  global_shap_sample: 5000
+dashboard:
+  refresh_seconds: 30
+  error_options:
+    - None
+    - Bad CVV
+    - Bad Expiration
+    - Bad Card Number
+    - Bad PIN
+monitoring:
+  latency_target_ms: 200
+  drift_reference_path: data/features/train_features.parquet
+  drift_report_path: dashboard/drift_report.html

@@ -1,0 +1,13 @@
+.env
+.ipynb_checkpoints
+__pycache__/
+.pytest_cache/
+*.pyc
+mlflow/
+mlflow.db
+logs/
+fraud_detection/
+models/artifacts/*.pkl
+data/
+*.parquet
+checkpoint.parquet
