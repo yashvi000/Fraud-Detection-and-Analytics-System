@@ -5,9 +5,10 @@ __pycache__/
 *.pyc
 mlflow/
 mlflow.db
-logs/
+logs/*.log
 fraud_detection/
 models/artifacts/*.pkl
-data/
-*.parquet
+data/features/*.parquet
+data/processed/*.parquet
+data/raw/*.csv
 checkpoint.parquet

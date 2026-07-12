@@ -1,0 +1,78 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+        
+        ports:
+          - 5432:5432
+        
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 30s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create database schema
+        run: |
+          PGPASSWORD=${{ secrets.DB_PASSWORD }} psql \
+            -h localhost \
+            -U ${{ secrets.DB_USER }} \
+            -d ${{ secrets.DB_NAME }} \
+            -f src/database/schema.sql
+        
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD }}
+
+
+      - name: Run Unit Tests
+        run: python -m pytest tests/test_features.py tests/test_models.py tests/test_scoring.py -v
+
+        env:
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_HOST: localhost
+          DB_PORT: 5432
+          MODEL_VERSION: v1
+          API_HOST: localhost
+          API_PORT: 8000
+
+
+      - name: Run API Tests
+        run: python -m pytest tests/test_api.py -v
+
+        env:
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_HOST: localhost
+          DB_PORT: 5432
+          MODEL_VERSION: v1
+          API_HOST: localhost
+          API_PORT: 8000

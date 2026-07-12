@@ -50,7 +50,7 @@ API_URL = f"http://{API_HOST}:{API_PORT}"
 # Getting API responses
 def fetch_metrics() -> dict:
     try:
-        response = requests.get(f"{API_URL}/metrics", timeout=5)
+        response = requests.get(f"{API_URL}/metrics", timeout=30)
         return response.json()
     except Exception:
         return {}

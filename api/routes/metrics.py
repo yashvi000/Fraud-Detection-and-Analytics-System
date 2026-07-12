@@ -14,9 +14,9 @@ def get_dashboard_metrics():
 
     logger.info(
         f"GET /metrics | "
-        f"total : {metrics['total_predictions']:,} | "
-        f"alerts : {metrics['total_alerts']:,} | "
-        f"rate : {metrics['alert_rate']}%"
+        f"total : {metrics.get('total_predictions', 0):,} | "
+        f"alerts : {metrics.get('total_alerts'):,} | "
+        f"rate : {metrics.get('alert_rate', 0)}%"
     )
 
     return MetricsOutput(**metrics)

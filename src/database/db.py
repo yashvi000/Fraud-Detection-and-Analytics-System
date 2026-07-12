@@ -19,9 +19,10 @@ with open(CONFIG_PATH, "r") as f:
 db = config["postgres"]
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
 
 engine = create_engine(
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{db['host']}:"
+    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:"
     f"{db['port']}/{db['database']}",
     pool_size = db['pool_size'],
     max_overflow = db['max_overflow'],
@@ -137,8 +138,8 @@ def get_metrics() -> dict:
         ).fetchall()
 
         return {
-            "total_predictions": totals.total_predictions,
-            "total_alerts" : totals.total_alerts,
+            "total_predictions": totals.total_predictions or 0,
+            "total_alerts" : totals.total_alerts or 0,
             
             "alert_rate" : round(
                 totals.total_alerts / totals.total_predictions * 100, 4

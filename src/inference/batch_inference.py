@@ -3,7 +3,8 @@ import yaml
 import logging
 import os
 import joblib
-from sqlalchemy import create_engine, text
+import duckdb
+from sqlalchemy import text
 from psycopg2.extras import execute_values
 from pathlib import Path
 from dotenv import load_dotenv
@@ -81,11 +82,25 @@ def main():
     V1_TEST_END = config["splits"]["v1_test_end"]
 
     logger.info(f"Loading features : {FEATURES_PATH}")
-    df = pd.read_parquet(FEATURES_PATH)
+
+    THREADS = config["duckdb"]["threads"]
+    MEMORY = config["duckdb"]["memory_limit"]
+
+    cols_sql = ", ".join(FEATURE_COLS + ["timestamp", "amount"])
+
+    con = duckdb.connect()
+    con.execute(f"PRAGMA threads = {THREADS}")
+    con.execute(f"PRAGMA memory_limit = '{MEMORY}'")
+
+    df = con.execute(f"""
+        SELECT {cols_sql}
+        FROM read_parquet('{str(FEATURES_PATH)}')
+        WHERE YEAR(timestamp) <= {V1_TEST_END}
+        ORDER BY timestamp ASC
+    """).df()
+
+    con.close()
     
-    # For V1 only
-    year = df["timestamp"].dt.year
-    df = df[year <= V1_TEST_END].reset_index(drop=True)
 
     # Verifying chronological sorting order
     is_sorted = df["timestamp"].is_monotonic_increasing
@@ -94,6 +109,7 @@ def main():
         logger.warning("Features not in chronological order")
     logger.info(f"Loaded {len(df):,} V1 Rows (sorted chronologically)")
     
+    df = df.reset_index(drop=True)
     df["transaction_id"] = [f"TXN_{i+1:012d}" for i in range(len(df))]
 
     clear_predictions()
