@@ -5,9 +5,14 @@ import os
 from dotenv import load_dotenv
 import time
 from sqlalchemy import text
+import yaml
+from pathlib import Path
 
 from fastapi import APIRouter, Request, HTTPException
 from api.schemas import TransactionInput, PredictionOutput, RiskTier
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from src.database.db import engine, insert_prediction, insert_scored_transaction
 from src.risk.scoring import compute_risk_tier, compute_expected_exposure
@@ -34,6 +39,28 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 MODEL_VERSION = os.getenv("MODEL_VERSION")
+
+limiter = Limiter(key_func=get_remote_address)
+
+# Loading path and config
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CONFIG_PATH = PROJECT_ROOT / "config" / "config.yaml"
+
+with open(CONFIG_PATH, "r") as f:
+    _config = yaml.safe_load(f)
+
+RATE_LIMIT = f"{_config['api']['rate_limit_predict']}/minute"
+
+
+def is_localhost(request: Request) -> bool:
+    host = request.client.host
+
+    return (
+        host in ("127.0.0.1", "::1", "localhost")
+        or host.startswith("172.")
+        or host.startswith("192.168.")
+        or host.startswith("10.")
+    )
 
 
 def fetch_user_card_history(
@@ -267,8 +294,12 @@ def build_features(transaction: TransactionInput, request: Request) -> pd.DataFr
 
 
 @router.post("/predict", response_model=PredictionOutput)
+@limiter.limit(RATE_LIMIT, exempt_when=is_localhost)
 def predict_transaction(transaction: TransactionInput, request: Request):
     # Scoring one txn received from POST /predict
+
+    logger.info(f"Rate Limit for external IP : {RATE_LIMIT}")
+    logger.info(f"Request from : {request.client.host} | exempt : {is_localhost(request)}")
 
     start = time.time()
 

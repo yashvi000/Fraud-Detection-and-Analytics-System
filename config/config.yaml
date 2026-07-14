@@ -158,3 +158,5 @@ monitoring:
   latency_target_ms: 200
   drift_reference_path: data/features/train_features.parquet
   drift_report_path: dashboard/drift_report.html
+api:
+  rate_limit_predict: 60

@@ -64,8 +64,8 @@ jobs:
           API_PORT: 8000
 
 
-      - name: Run API Tests
-        run: python -m pytest tests/test_api.py -v
+      - name: Run API and Integration Tests
+        run: python -m pytest tests/test_api.py tests/test_integration.py -v
 
         env:
           DB_USER: ${{ secrets.DB_USER }}

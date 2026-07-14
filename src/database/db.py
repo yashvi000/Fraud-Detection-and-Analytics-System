@@ -104,7 +104,7 @@ def get_metrics() -> dict:
                  SUM(CASE WHEN is_alert THEN 1 ELSE 0 END) AS total_alerts,
                  ROUND(AVG(fraud_probability)::NUMERIC, 6) AS avg_fraud_prob,
                  ROUND(AVG(expected_exposure)::NUMERIC, 2) AS avg_exposure,
-                 ROUND(AVG(inference_latency)::NUMERIC, 2) AS avg_latency_ms
+                 ROUND(AVG(NULLIF(inference_latency, 0))::NUMERIC, 2) AS avg_latency_ms
                 FROM predictions
             """)
         ).fetchone()

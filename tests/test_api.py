@@ -2,55 +2,10 @@ import pytest
 import pandas as pd
 import numpy as np
 import sys
-import yaml
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-from fastapi.testclient import TestClient
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-# Fixtures
-@pytest.fixture
-def mock_app():
-    # Creating FastAPI test client
-
-    from api.main import app
-    mock_model = MagicMock()
-    mock_model.predict_proba.return_value = np.array([[0.95, 0.05]])
-
-    PROJECT_PATH = Path(__file__).resolve().parents[1]
-    CONFIG_PATH = PROJECT_PATH / "config" / "config.yaml"
-
-    with open(CONFIG_PATH, "r") as f:
-        config = yaml.safe_load(f)
-
-    app.state.model = mock_model
-    app.state.mcc_freq = {}
-    app.state.cold_start = {}
-    app.state.config = config
-    app.state.threshold = config["model"]["threshold"]
-    app.state.feature_cols = config["feature_cols"]
-
-    return TestClient(app)
-
-
-@pytest.fixture
-def sample_txn():
-    # Sample transaction payload for POST /predict
-
-    return {
-        "transaction_id" : "TEST_TXN_001",
-        "user_id" : 0,
-        "card" : 0,
-        "timestamp" : "2013-04-01 16:40:00",
-        "amount" : 143.00,
-        "use_chip" : "swipe",
-        "merchant_name" : 999999999,
-        "merchant_city" : "La Verne",
-        "merchant_state" : "CA",
-        "mcc" : 5912,
-        "errors" : "None",
-    }
 
 
 class TestHealth:
