@@ -1,0 +1,46 @@
+name: Deploy
+
+on:
+  
+  workflow_run:
+
+    workflows:
+      - Tests
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to GCP
+        uses: appleboy/ssh-action@v1
+        
+        with:
+          host: ${{ secrets.GCP_HOST }}
+          username: ${{ secrets.GCP_USER }} 
+          key: ${{ secrets.GCP_SSH_KEY }}
+
+          script: |
+            set -e
+            cd ~/Fraud-Detection-and-Analytics-System
+
+            echo "$(date) Pulling latest code"
+            git fetch origin
+            git reset --hard origin/main
+            git clean -fd
+
+            echo "$(date) Restarting containers"
+            docker compose up --build -d
+
+            echo "$(date) Running health check"
+            sleep 10
+            curl -f http://localhost:8000/health
+
+            docker image prune -f
+            echo "$(date) Deployment Successful"
