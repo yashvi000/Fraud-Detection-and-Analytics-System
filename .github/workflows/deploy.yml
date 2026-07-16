@@ -38,9 +38,24 @@ jobs:
             echo "$(date) Restarting containers"
             docker compose up --build -d
 
-            echo "$(date) Running health check"
-            sleep 10
-            curl -f http://localhost:8000/health
+            echo "$(date) Running FastAPI health check"
+            for i in (1..10)
+            do
+
+              if curl -f http://localhost:8000/health; then
+                echo "$(date) FastAPI is healthy"
+                break
+              fi
+
+              if [ $i -eq 10]; then
+                echo "$(date) FastAPI failed health check"
+                docker compose ps
+                exit 1
+              fi
+
+              echo "Waiting for FastAPI startup ..."
+              sleep 5
+            done
 
             docker image prune -f
             echo "$(date) Deployment Successful"
