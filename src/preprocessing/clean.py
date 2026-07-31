@@ -218,7 +218,7 @@ def run_preprocessing():
     print(f"scale_pos_weight : {scale_pos_weight}")
 
     # Saving scale_pos_weight to config
-    config["model"]["lgbm"]["scale_pos_weight"] = scale_pos_weight
+    config["model"]["lgbm"]["baseline"]["scale_pos_weight"] = scale_pos_weight
     with open(CONFIG_PATH, "w") as f:
         yaml.safe_dump(config, f, sort_keys=False)
     print("\nSaved scale_pos_weight to config.yaml")

@@ -18,7 +18,8 @@ splits:
   drift_detection_year: 2015
   v2_train_start: 1991
   v2_train_end: 2017
-  v2_val_year: 2018
+  v2_val_start: 2018
+  v2_val_end: 2018
   v2_test_start: 2019
   v2_test_end: 2020
 experiments:
@@ -92,6 +93,7 @@ feature_cols:
 - user_is_new_merchant
 - distinct_cards_used_1440min
 model:
+  active_version: v1
   lgbm:
     algorithm: LightGBM
     baseline:
@@ -101,6 +103,7 @@ model:
       objective: binary
       metric: aucpr
       scale_pos_weight: 649.4353
+      v2_scale_pos_weight: 807.2838
     tuned:
       learning_rate: 0.017706515519014778
       max_depth: 9
@@ -110,21 +113,39 @@ model:
       min_child_samples: 33
       reg_alpha: 0
       reg_lambda: 1.0e-06
+    v2_tuned:
+      learning_rate: 0.011269656488047454
+      max_depth: 12
+      n_estimators: 4600
+      num_leaves: 72
+      feature_fraction: 0.5028180600816718
+      min_child_samples: 119
+      reg_alpha: 0
+      reg_lambda: 1.0e-06
   isolation_forest:
     contamination: 0.01
     n_estimators: 100
   hybrid:
     lgbm_weight: 1.0
     iso_weight: 0.0
-  threshold: 0.95
+  v2_hybrid:
+    lgbm_weight: 1.0
+    iso_weight: 0.0
+  threshold: 0.98
+  v2_threshold: 0.39
   fp_cost: 2.0
   recall_floor: 0.75
 risk:
   thresholds:
-    low: 0.118
-    medium: 0.437
-    high: 0.934
-    critical: 0.95
+    low: 0.013
+    medium: 0.631
+    high: 0.96
+    critical: 0.98
+  v2_thresholds:
+    low: 0.013
+    medium: 0.044
+    high: 0.1
+    critical: 0.39
   severity_weights:
     minimal: 0.1
     low: 0.3
@@ -144,19 +165,24 @@ artifacts:
   shap_global_plot_path: dashboard/shap_global_importance.png
   lgbm_v1_path: models/artifacts/lgbm_v1.pkl
   iso_v1_path: models/artifacts/iso_v1.pkl
+  shap_global_v2_path: dashboard/shap_global_v2.png
+  lgbm_v2_path: models/artifacts/lgbm_v2.pkl
+  iso_v2_path: models/artifacts/iso_v2.pkl
 shap:
   global_shap_sample: 5000
 dashboard:
   refresh_seconds: 30
   error_options:
-    - None
-    - Bad CVV
-    - Bad Expiration
-    - Bad Card Number
-    - Bad PIN
+  - None
+  - Bad CVV
+  - Bad Expiration
+  - Bad Card Number
+  - Bad PIN
 monitoring:
   latency_target_ms: 200
   drift_reference_path: data/features/train_features.parquet
   drift_report_path: dashboard/drift_report.html
+  drift_sample_size: 20000
+  data_drift_threshold: 0.2
 api:
   rate_limit_predict: 60
