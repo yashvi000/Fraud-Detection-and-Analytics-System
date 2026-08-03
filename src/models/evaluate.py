@@ -8,15 +8,17 @@ import mlflow
 import lightgbm as lgb
 import joblib
 from dotenv import load_dotenv
+import sys
 
 from sklearn.metrics import (
     average_precision_score, roc_auc_score, roc_curve, 
     f1_score, recall_score, precision_score
 )
 
-from .model_utils import evaluate_model
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.models.model_utils import evaluate_model
 
 # Setting up logger
 LOG_DIR = PROJECT_ROOT / "logs"
@@ -65,10 +67,10 @@ year = df["timestamp"].dt.year
 v1_val = df[(year >= V1_VAL_START) & (year <= V1_VAL_END)]
 v1_test = df[(year >= V1_TEST_START) & (year <= V1_TEST_END)]
 
-x_val = v1_val[FEATURE_COLS]
+x_val = v1_val[FEATURE_COLS].astype("float32")
 y_val = v1_val["is_fraud"]
 
-x_test = v1_test[FEATURE_COLS]
+x_test = v1_test[FEATURE_COLS].astype("float32")
 y_test = v1_test["is_fraud"]
 
 logger.info(f"Val : {len(x_val):,} Rows | Test : {len(x_test):,} Rows")
@@ -77,10 +79,11 @@ logger.info(f"Val : {len(x_val):,} Rows | Test : {len(x_test):,} Rows")
 load_dotenv()
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME"))
-mlflow.set_tag("model_version", os.getenv("MODEL_VERSION"))
 
 mlflow.end_run()
 with mlflow.start_run(run_name="v1_evaluation"):
+
+    mlflow.set_tag("model_version", os.getenv("MODEL_VERSION"))
     
     logger.info("Evaluating Model ...")
     

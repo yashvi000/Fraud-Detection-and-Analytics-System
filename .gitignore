@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 *.pyc
 mlflow/
+mlartifacts/
 mlflow.db
 logs/*.log
 fraud_detection/

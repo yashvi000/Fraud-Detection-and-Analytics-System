@@ -35,6 +35,16 @@ jobs:
             git reset --hard origin/main
             git clean -fd
 
+            echo "$(date) Downloading model artifacts from GCS"
+            mkdir -p models/artifacts
+
+            gcloud storage cp gs://${{ secrets.GCP_BUCKET_NAME }}/models/lgbm_v1.pkl models/artifacts/lgbm_v1.pkl
+            gcloud storage cp gs://${{ secrets.GCP_BUCKET_NAME }}/models/iso_v1.pkl models/artifacts/iso_v1.pkl
+            gcloud storage cp gs://${{ secrets.GCP_BUCKET_NAME }}/models/mcc_encoding.pkl models/artifacts/mcc_encoding.pkl
+            gcloud storage cp gs://${{ secrets.GCP_BUCKET_NAME }}/models/cold_start_fill_values.pkl models/artifacts/cold_start_fill_values.pkl
+            
+            echo "$(date) Model artifacts downloaded"
+            
             echo "$(date) Restarting containers"
             docker compose up --build -d
 

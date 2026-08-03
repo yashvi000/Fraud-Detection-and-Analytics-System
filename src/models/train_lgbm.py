@@ -43,7 +43,7 @@ V1_VAL_END = config["splits"]["v1_val_end"]
 
 RANDOM_STATE = config["random_state"]
 SCALE_POS_WEIGHT = config["model"]["lgbm"]["baseline"]["scale_pos_weight"]
-VAL_TUNE_SIZE = 2_00_000
+VAL_TUNE_SIZE = config["model"]["lgbm"]["val_tune_size"]
 
 FEATURE_COLS = config["feature_cols"]
 
@@ -68,35 +68,47 @@ gc.collect()
 
 logger.info(f"Train : {len(x_train):,} Rows | Val : {len(x_val):,} Rows")
 
-# Val subset for Early Stopping
-val_tune_idx = np.random.RandomState(RANDOM_STATE).choice(len(x_val), VAL_TUNE_SIZE, replace=False)
+# Tuned stratified val with oversampling
+fraud_val_idx = x_val[y_val == 1].index
+non_fraud_val_idx = x_val[y_val == 0].index
 
-x_val_tune = x_val.iloc[val_tune_idx]
-y_val_tune = y_val.iloc[val_tune_idx]
+# Oversampling frauds
+tune_val_fraud_count = min(len(fraud_val_idx), 1000)
+tune_val_non_fraud_count = VAL_TUNE_SIZE - tune_val_fraud_count
+
+tune_val_idx = np.concatenate([
+    np.random.RandomState(RANDOM_STATE).choice(fraud_val_idx, tune_val_fraud_count, replace=False),
+    np.random.RandomState(RANDOM_STATE).choice(non_fraud_val_idx, tune_val_non_fraud_count, replace=False)
+])
+
+x_val_tune = x_val.loc[tune_val_idx]
+y_val_tune = y_val.loc[tune_val_idx]
 
 logger.info(f"Early Stopping Val : {len(x_val_tune):,} Rows")
+logger.info(f"Early Stopping Val Fraud Count : {y_val_tune.sum():,}")
 
 
 # Training LightGBM
 final_parameters = {
     "objective" : config["model"]["lgbm"]["baseline"]["objective"],
-    "metric" : config["model"]["lgbm"]["baseline"]["metric"],
+    "metric" : "auc",   # For Early Stopping
     "scale_pos_weight" : SCALE_POS_WEIGHT,
     "random_state" : RANDOM_STATE,
     "verbosity" : -1,
-    "n_jobs" : -1,
+    "n_jobs" : 1,
     **config["model"]["lgbm"]["tuned"]
 }
 
 load_dotenv()
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME"))
-mlflow.set_tag("model_version", os.getenv("MODEL_VERSION"))
 
 mlflow.end_run()
 with mlflow.start_run(run_name="v1_final"):
 
+    mlflow.set_tag("model_version", os.getenv("MODEL_VERSION"))
     mlflow.log_params(final_parameters)
+
     mlflow.log_params({
         "train_rows" : len(x_train),
         "val_rows" : len(x_val),
@@ -110,16 +122,14 @@ with mlflow.start_run(run_name="v1_final"):
     lgbm_v1 = lgb.LGBMClassifier(**final_parameters)
     lgbm_v1.fit(
         x_train, y_train,
-        eval_set=[(x_val_tune, y_val_tune)],
-        eval_metric="auc",   # For Early Stopping
         callbacks=[
-            lgb.early_stopping(stopping_rounds=50, verbose=False),   # Early Stopping
             lgb.log_evaluation(period=-1)
         ]
     )
 
-    logger.info(f"Best Iteration : {lgbm_v1.best_iteration_}")
-    mlflow.log_param("best_iteration", lgbm_v1.best_iteration_)
+    trees_used = final_parameters["n_estimators"]
+    logger.info(f"Trees Used : {trees_used}")
+    mlflow.log_param("trees_used", trees_used)
 
 
     # Saving Artifacts

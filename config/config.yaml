@@ -96,6 +96,7 @@ model:
   active_version: v1
   lgbm:
     algorithm: LightGBM
+    val_tune_size: 200000
     baseline:
       learning_rate: 0.05
       max_depth: 6
@@ -105,12 +106,12 @@ model:
       scale_pos_weight: 649.4353
       v2_scale_pos_weight: 807.2838
     tuned:
-      learning_rate: 0.017706515519014778
-      max_depth: 9
-      n_estimators: 950
-      num_leaves: 80
-      feature_fraction: 0.836965827544817
-      min_child_samples: 33
+      learning_rate: 0.02219225545234953
+      max_depth: 10
+      n_estimators: 1700
+      num_leaves: 113
+      feature_fraction: 0.6700794533632869
+      min_child_samples: 64
       reg_alpha: 0
       reg_lambda: 1.0e-06
     v2_tuned:
@@ -131,16 +132,16 @@ model:
   v2_hybrid:
     lgbm_weight: 1.0
     iso_weight: 0.0
-  threshold: 0.98
+  threshold: 0.6
   v2_threshold: 0.39
   fp_cost: 2.0
   recall_floor: 0.75
 risk:
   thresholds:
-    low: 0.013
-    medium: 0.631
-    high: 0.96
-    critical: 0.98
+    low: 0.01
+    medium: 0.035
+    high: 0.44
+    critical: 0.6
   v2_thresholds:
     low: 0.013
     medium: 0.044
@@ -163,7 +164,7 @@ inference:
 artifacts:
   model_dir: models/artifacts
   shap_global_plot_path: dashboard/shap_global_importance.png
-  lgbm_v1_path: models/artifacts/lgbm_v1.pkl
+  lgbm_v1_path: models\artifacts\lgbm_v1.pkl
   iso_v1_path: models/artifacts/iso_v1.pkl
   shap_global_v2_path: dashboard/shap_global_v2.png
   lgbm_v2_path: models/artifacts/lgbm_v2.pkl

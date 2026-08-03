@@ -14,7 +14,7 @@ class TestComputeRiskTier:
         # All probabilities should be mapped to a tier
 
         valid_tiers = {"minimal", "low", "medium", "high", "critical"}
-        for prob in [0.0, 0.05, 0.2, 0.5, 0.75, 0.95, 1.0]:
+        for prob in [0.005, 0.02, 0.2, 0.5, 0.85]:
             assert compute_risk_tier(prob) in valid_tiers, \
             f"Invalid tier for probability {prob}"
 
@@ -22,8 +22,8 @@ class TestComputeRiskTier:
         # Lowest boundary = 'minimal', Highest boundary = 'critical'
 
         assert compute_risk_tier(0.0) == "minimal"
-        assert compute_risk_tier(0.01) == "minimal"
-        assert compute_risk_tier(0.96) == "critical"
+        assert compute_risk_tier(0.0099) == "minimal"
+        assert compute_risk_tier(0.6) == "critical"
         assert compute_risk_tier(1.0) == "critical"
 
 
@@ -31,7 +31,7 @@ class TestComputeRiskTier:
         # Higher probability should never have lower tier
 
         tier_order = {"minimal": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
-        probs = [0.0, 0.05, 0.2, 0.5, 0.94, 0.96, 1]
+        probs = [0.0, 0.005, 0.02, 0.5, 0.75, 1]
         tiers = [tier_order[compute_risk_tier(p)] for p in probs]
         assert tiers == sorted(tiers)
 

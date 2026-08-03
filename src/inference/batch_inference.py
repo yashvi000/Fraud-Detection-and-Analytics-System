@@ -8,13 +8,16 @@ from sqlalchemy import text
 from psycopg2.extras import execute_values
 from pathlib import Path
 from dotenv import load_dotenv
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.risk.scoring import compute_risk_tier, compute_expected_exposure
 from src.database.db import engine
 
 load_dotenv()
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Loading logger
 LOG_DIR = PROJECT_ROOT / "logs"
