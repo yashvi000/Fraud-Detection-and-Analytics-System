@@ -13,3 +13,4 @@ data/features/*.parquet
 data/processed/*.parquet
 data/raw/*.csv
 checkpoint.parquet
+notebooks/catboost_info

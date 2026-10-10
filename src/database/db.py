@@ -121,14 +121,7 @@ def get_metrics() -> dict:
         alert_over_time = conn.execute(
             text("""
                 SELECT 
-                 DATE_TRUNC('day', 
-                    predicted_at -
-                    CASE
-                        WHEN EXTRACT(DAY FROM predicted_at) < 15
-                        THEN (EXTRACT(DAY FROM predicted_at) - 1) * INTERVAL '1 day'
-                        ELSE (EXTRACT(DAY FROM predicted_at) - 15) * INTERVAL '1 day'
-                    END
-                 ) AS month, 
+                 DATE_TRUNC('week', predicted_at) AS month, 
                  COUNT(*) AS total,
                  SUM(CASE WHEN is_alert THEN 1 ELSE 0 END) AS alerts
                 FROM predictions

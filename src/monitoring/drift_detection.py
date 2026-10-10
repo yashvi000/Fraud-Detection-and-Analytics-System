@@ -32,7 +32,6 @@ DATA_DRIFT_THRESHOLD = config["monitoring"]["data_drift_threshold"]
 V1_TRAIN_START= config["splits"]["v1_train_start"]
 V1_TRAIN_END = config["splits"]["v1_train_end"]
 DRIFT_YEAR = config["splits"]["drift_detection_year"]
-V2_TEST_END = config["splits"]["v2_test_end"]
 
 # Loading logger
 LOG_DIR = PROJECT_ROOT / "logs"
@@ -92,9 +91,12 @@ def load_reference_data(sample_size: int = SAMPLE_SIZE) -> pd.DataFrame:
 
     try:
         df = con.execute(f"""
-            SELECT {cols_sql}
-            FROM read_parquet('{source}')
-            {where_clause}
+            WITH filtered AS (
+                SELECT {cols_sql}
+                FROM read_parquet('{source}')
+                {where_clause}
+            )
+            SELECT * FROM filtered
             USING SAMPLE {sample_size} ROWS (reservoir, {RANDOM_STATE})
         """).df()
     
@@ -145,13 +147,13 @@ def load_current_data(
         
         else:
             query = f"""
-                SELECT *
-                FROM (
+                WITH filtered AS (
                     SELECT {cols_sql}
                     FROM read_parquet('{FEATURES_PATH}')
                     WHERE YEAR(timestamp) >= {year_start}
                         AND YEAR(timestamp) <= {year_end}
                 )
+                SELECT * FROM filtered
                 USING SAMPLE {sample_size} ROWS (reservoir, {RANDOM_STATE})
             """
 

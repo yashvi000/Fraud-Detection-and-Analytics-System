@@ -94,6 +94,9 @@ feature_cols:
 - distinct_cards_used_1440min
 model:
   active_version: v1
+  smote:
+    sampling_strategy: 0.01
+    kind: borderline-1
   lgbm:
     algorithm: LightGBM
     val_tune_size: 200000
@@ -102,9 +105,10 @@ model:
       max_depth: 6
       n_estimators: 500
       objective: binary
-      metric: aucpr
       scale_pos_weight: 649.4353
       v2_scale_pos_weight: 807.2838
+      v4_scale_pos_weight: 708.8339
+      v5_scale_pos_weight: 100.0001
     tuned:
       learning_rate: 0.02219225545234953
       max_depth: 10
@@ -123,6 +127,18 @@ model:
       min_child_samples: 119
       reg_alpha: 0
       reg_lambda: 1.0e-06
+  catboost:
+    algorithm: CatBoost
+    baseline:
+      loss_function: Logloss
+      eval_metric: AUC
+      learning_rate: 0.05
+      depth: 6
+      iterations: 1000
+      l2_leaf_reg: 3.0
+      bagging_temperature: 0.5
+      min_data_in_leaf: 50
+      rsm: 1
   isolation_forest:
     contamination: 0.01
     n_estimators: 100
@@ -132,8 +148,20 @@ model:
   v2_hybrid:
     lgbm_weight: 1.0
     iso_weight: 0.0
+  v3_hybrid:
+    catb_weight: 1.0
+    iso_weight: 0.0
+  v4_hybrid:
+    lgbm_weight: 1.0
+    iso_weight: 0.0
+  v5_hybrid:
+    lgbm_weight: 1.0
+    iso_weight: 0.0
   threshold: 0.6
-  v2_threshold: 0.39
+  v2_threshold: 0.12
+  v3_threshold: 0.26
+  v4_threshold: 0.1
+  v5_threshold: 0.1
   fp_cost: 2.0
   recall_floor: 0.75
 risk:
@@ -143,10 +171,25 @@ risk:
     high: 0.44
     critical: 0.6
   v2_thresholds:
-    low: 0.013
-    medium: 0.044
-    high: 0.1
-    critical: 0.39
+    low: 0.002
+    medium: 0.007
+    high: 0.017
+    critical: 0.12
+  v3_thresholds:
+    low: 0.12
+    medium: 0.284
+    high: 0.466
+    critical: 0.26
+  v4_thresholds:
+    low: 0.0
+    medium: 0.001
+    high: 0.003
+    critical: 0.1
+  v5_thresholds:
+    low: 0.0
+    medium: 0.001
+    high: 0.002
+    critical: 0.1
   severity_weights:
     minimal: 0.1
     low: 0.3
@@ -169,6 +212,12 @@ artifacts:
   shap_global_v2_path: dashboard/shap_global_v2.png
   lgbm_v2_path: models/artifacts/lgbm_v2.pkl
   iso_v2_path: models/artifacts/iso_v2.pkl
+  catb_v3_path: models/artifacts/catb_v3.pkl
+  iso_v3_path: models/artifacts/iso_v3.pkl
+  lgbm_v4_path: models/artifacts/lgbm_v4.pkl
+  iso_v4_path: models/artifacts/iso_v4.pkl
+  lgbm_v5_path: models/artifacts/lgbm_v5.pkl
+  iso_v5_path: models/artifacts/iso_v5.pkl
 shap:
   global_shap_sample: 5000
 dashboard:
